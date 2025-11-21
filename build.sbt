@@ -1,10 +1,39 @@
+import xerial.sbt.Sonatype._
 val scala3Version = "3.3.1"
+ThisBuild / versionScheme := Some("early-semver")
 
 lazy val root = project
   .in(file("."))
+  .enablePlugins(xerial.sbt.Sonatype)
   .settings(
     name := "alice-blue-sdk",
-    version := "0.1.0-SNAPSHOT",
+    version := "0.1.0",
+    organization := "io.github.arunkmishra",
+    description := "Alice Blue Scala SDK",
+    
+    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+    homepage := Some(url("https://github.com/arunkmishra/alice-blue-sdk")),
+    
+    developers := List(
+      Developer(
+        "arunkmishra",
+        "Arun Kumar Mishra",
+        "arunkmishra4@gmail.com",
+        url("https://github.com/arunkmishra")
+      )
+    ),
+    
+    scmInfo := Some(
+      ScmInfo(
+        url("https://github.com/arunkmishra/alice-blue-sdk"),
+        "scm:git:git@github.com:arunkmishra/alice-blue-sdk.git"
+      )
+    ),
+    
+    pomIncludeRepository := { _ => false },
+    publishTo := sonatypePublishToBundle.value,
+    sonatypeCredentialHost := "central.sonatype.com",
+    publishMavenStyle := true,
 
     scalaVersion := scala3Version,
 

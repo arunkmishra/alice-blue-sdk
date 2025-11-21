@@ -1,7 +1,8 @@
-package com.aliceblue
+package com.aliceblue.examples
 
 import zio.*
 import zio.stream.*
+import com.aliceblue.AliceBlueClient
 import com.aliceblue.models.*
 import com.aliceblue.websocket.Instrument
 
