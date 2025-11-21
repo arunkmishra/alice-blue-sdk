@@ -1,6 +1,9 @@
 # Alice Blue Scala ZIO SDK
 
-A functional, type-safe Scala SDK for the Alice Blue trading platform, built using [ZIO](https://zio.dev) and [sttp](https://sttp.softwaremill.com).
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.arunkmishra/alice-blue-sdk_3.svg)](https://central.sonatype.com/artifact/io.github.arunkmishra/alice-blue-sdk_3)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+A functional, type-safe Scala SDK for the [Alice Blue](https://aliceblueonline.com/) trading platform, built using [ZIO](https://zio.dev) and [sttp](https://sttp.softwaremill.com).
 
 ## Features
 
@@ -12,14 +15,18 @@ A functional, type-safe Scala SDK for the Alice Blue trading platform, built usi
 
 ## Installation
 
+### Prerequisites
+- Java 11 or higher
+- Scala 3.3.x
+
+### SBT
 Add the following dependency to your `build.sbt`:
 
 ```scala
 libraryDependencies += "io.github.arunkmishra" %% "alice-blue-sdk" % "0.1.0"
 ```
 
-Or for Maven:
-
+### Maven
 ```xml
 <dependency>
     <groupId>io.github.arunkmishra</groupId>
@@ -32,7 +39,7 @@ Or for Maven:
 
 ### 1. Initialize the Client
 
-Create an instance of `AliceBlueClient` using `ZLayer`.
+Create an instance of `AliceBlueClient` using `ZLayer`. You will need your User ID and API Key.
 
 ```scala
 import zio._
@@ -51,7 +58,18 @@ object MyApp extends ZIOAppDefault:
     )
 ```
 
-### 2. Place an Order
+### 2. Master Contracts
+
+Fetch tradable instruments and contracts.
+
+```scala
+// Fetch all NSE Equity contracts
+val contracts = client.getMasterContract("NSE")
+```
+
+### 3. Place an Order
+
+Place a buy or sell order.
 
 ```scala
 import com.aliceblue.models._
@@ -75,7 +93,32 @@ val orderRequest = PlaceOrderRequest(
 val response = client.placeOrder(orderRequest)
 ```
 
-### 3. Stream Market Data
+### 4. Modify an Order
+
+```scala
+val modifyRequest = ModifyOrderRequest(
+  nestOrderNumber = "2103170000001",
+  exch = "NSE",
+  prctyp = "LMT",
+  price = "15000.0",
+  qty = "1",
+  trigPrice = "0.0",
+  trading_symbol = "NIFTY",
+  discqty = "0"
+)
+
+val response = client.modifyOrder(modifyRequest)
+```
+
+### 5. Cancel an Order
+
+```scala
+val response = client.cancelOrder("NSE", "2103170000001")
+```
+
+### 6. Stream Market Data
+
+Connect to the WebSocket to receive real-time ticks.
 
 ```scala
 import com.aliceblue.websocket.Instrument
@@ -91,7 +134,9 @@ for
 yield ()
 ```
 
-### 4. Fetch Portfolio
+### 7. Fetch Portfolio
+
+Access your holdings and funds.
 
 ```scala
 for
@@ -103,12 +148,28 @@ for
 yield ()
 ```
 
-## Project Structure
+## Development
 
-- `com.aliceblue.AliceBlueClient`: Main entry point.
-- `com.aliceblue.models`: Request/Response models and Enums.
-- `com.aliceblue.api`: Core API logic (Orders, Portfolio).
-- `com.aliceblue.websocket`: WebSocket client for market data.
+### Build
+To build the project from source:
+
+```bash
+sbt compile
+```
+
+### Test
+To run the unit tests:
+
+```bash
+sbt test
+```
+
+### Run
+To run the example application (if configured):
+
+```bash
+sbt run
+```
 
 ## License
 
