@@ -14,10 +14,11 @@ object PortfolioSpec extends ZIOSpecDefault:
     test("getHoldings parses response correctly") {
       val backend = HttpClientZioBackend.stub
         .whenRequestMatches(_.uri.path.endsWith(List("positionAndHoldings", "holdings")))
-        .thenRespond("""{"stat": "Ok", "HoldingVal": [{"isin": "ISIN1", "token": "1", "symbol": "TATA", "qty": "10", "price": "100"}]}""")
+        .thenRespond(
+          """{"stat": "Ok", "HoldingVal": [{"isin": "ISIN1", "token": "1", "symbol": "TATA", "qty": "10", "price": "100"}]}"""
+        )
 
-      for
-        holdings <- Portfolio.getHoldings("USER1", "SESS1", backend)
+      for holdings <- Portfolio.getHoldings("USER1", "SESS1", backend)
       yield assertTrue(holdings.head.symbol == "TATA")
     },
     test("getTradeBook parses response correctly") {
@@ -25,8 +26,7 @@ object PortfolioSpec extends ZIOSpecDefault:
         .whenRequestMatches(_.uri.path.endsWith(List("placeOrder", "fetchTradeBook")))
         .thenRespond("""{"stat": "Ok", "result": [{"fillId": "1", "qty": "10", "price": "100", "symbol": "TATA"}]}""")
 
-      for
-        trades <- Portfolio.getTradeBook("USER1", "SESS1", backend)
+      for trades <- Portfolio.getTradeBook("USER1", "SESS1", backend)
       yield assertTrue(trades.head.symbol == "TATA")
     }
   )

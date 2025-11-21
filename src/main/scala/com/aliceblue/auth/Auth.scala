@@ -19,7 +19,7 @@ object Auth:
     backend.send(request).flatMap { response =>
       response.body match
         case Right(success) => ZIO.succeed(success.encKey)
-        case Left(error) => ZIO.fail(new Exception(s"Failed to get encryption key: $error"))
+        case Left(error)    => ZIO.fail(new Exception(s"Failed to get encryption key: $error"))
     }
 
   def getSessionId(userId: String, apiKey: String, encKey: String, backend: SttpBackend[Task, Any]): Task[String] =
@@ -32,10 +32,10 @@ object Auth:
     backend.send(request).flatMap { response =>
       response.body match
         case Right(success) => ZIO.succeed(success.sessionID)
-        case Left(error) => ZIO.fail(new Exception(s"Failed to get session ID: $error"))
+        case Left(error)    => ZIO.fail(new Exception(s"Failed to get session ID: $error"))
     }
 
   private def sha256(input: String): String =
-    val digest = MessageDigest.getInstance("SHA-256")
+    val digest  = MessageDigest.getInstance("SHA-256")
     val encoded = digest.digest(input.getBytes(StandardCharsets.UTF_8))
     encoded.map("%02x".format(_)).mkString

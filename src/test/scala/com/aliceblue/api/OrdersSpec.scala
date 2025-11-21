@@ -17,14 +17,22 @@ object OrdersSpec extends ZIOSpecDefault:
         .thenRespond("""[{"stat": "Ok", "nOrdNo": "12345"}]""")
 
       val req = PlaceOrderRequest(
-        complexty = "regular", discqty = "0", exch = "NSE", pCode = "MIS",
-        prctyp = "MKT", price = "0.0", qty = "1", ret = "DAY",
-        symbol_id = "1", trading_symbol = "TATA", transtype = "BUY",
-        trigPrice = "0.0", orderTag = "tag"
+        complexty = "regular",
+        discqty = "0",
+        exch = "NSE",
+        pCode = "MIS",
+        prctyp = "MKT",
+        price = "0.0",
+        qty = "1",
+        ret = "DAY",
+        symbol_id = "1",
+        trading_symbol = "TATA",
+        transtype = "BUY",
+        trigPrice = "0.0",
+        orderTag = "tag"
       )
 
-      for
-        resp <- Orders.placeOrder("USER1", "SESS1", req, backend)
+      for resp <- Orders.placeOrder("USER1", "SESS1", req, backend)
       yield assertTrue(resp.stat == "Ok") && assertTrue(resp.nOrdNo.contains("12345"))
     },
     test("cancelOrder sends correct request") {
@@ -32,17 +40,17 @@ object OrdersSpec extends ZIOSpecDefault:
         .whenRequestMatches(_.uri.path.endsWith(List("placeOrder", "cancelOrder")))
         .thenRespond("Cancelled")
 
-      for
-        resp <- Orders.cancelOrder("USER1", "SESS1", "12345", backend)
+      for resp <- Orders.cancelOrder("USER1", "SESS1", "12345", backend)
       yield assertTrue(resp == "Cancelled")
     },
     test("getOrderBook parses response correctly") {
       val backend = HttpClientZioBackend.stub
         .whenRequestMatches(_.uri.path.endsWith(List("placeOrder", "fetchOrderBook")))
-        .thenRespond("""{"stat": "Ok", "result": [{"nOrdNo": "1", "prc": "100", "qty": "1", "pcode": "MIS", "prctyp": "MKT", "trantype": "BUY", "status": "COMPLETE"}]}""")
+        .thenRespond(
+          """{"stat": "Ok", "result": [{"nOrdNo": "1", "prc": "100", "qty": "1", "pcode": "MIS", "prctyp": "MKT", "trantype": "BUY", "status": "COMPLETE"}]}"""
+        )
 
-      for
-        book <- Orders.getOrderBook("USER1", "SESS1", backend)
+      for book <- Orders.getOrderBook("USER1", "SESS1", backend)
       yield assertTrue(book.head.nOrdNo == "1")
     }
   )
