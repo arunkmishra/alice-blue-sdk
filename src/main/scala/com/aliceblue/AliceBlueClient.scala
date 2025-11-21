@@ -18,7 +18,7 @@ class AliceBlueClient(userId: String, apiKey: String, backend: SttpBackend[Task,
     for
       encKey <- Auth.getEncryptionKey(userId, backend)
       sessId <- Auth.getSessionId(userId, apiKey, encKey, backend)
-      _ <- ZIO.succeed { sessionId = Some(sessId) }
+      _      <- ZIO.succeed { sessionId = Some(sessId) }
     yield sessId
 
   def getSessionId: Task[String] =
@@ -48,7 +48,6 @@ class AliceBlueClient(userId: String, apiKey: String, backend: SttpBackend[Task,
 object AliceBlueClient:
   def make(userId: String, apiKey: String): ZLayer[Any, Throwable, AliceBlueClient] =
     ZLayer.scoped {
-      for
-        backend <- HttpClientZioBackend.scoped()
+      for backend <- HttpClientZioBackend.scoped()
       yield new AliceBlueClient(userId, apiKey, backend)
     }

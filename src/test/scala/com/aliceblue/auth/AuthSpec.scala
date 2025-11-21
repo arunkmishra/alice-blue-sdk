@@ -17,8 +17,7 @@ object AuthSpec extends ZIOSpecDefault:
         .whenRequestMatches(_.uri.path.endsWith(List("customer", "getAPIEncpkey")))
         .thenRespond("""{"encKey": "testKey"}""")
 
-      for
-        key <- Auth.getEncryptionKey("USER1", backend)
+      for key <- Auth.getEncryptionKey("USER1", backend)
       yield assertTrue(key == "testKey")
     },
     test("getSessionId returns session ID on success") {
@@ -26,8 +25,7 @@ object AuthSpec extends ZIOSpecDefault:
         .whenRequestMatches(_.uri.path.endsWith(List("customer", "getUserSID")))
         .thenRespond("""{"sessionID": "sess123"}""")
 
-      for
-        sess <- Auth.getSessionId("USER1", "APIKEY", "ENCKEY", backend)
+      for sess <- Auth.getSessionId("USER1", "APIKEY", "ENCKEY", backend)
       yield assertTrue(sess == "sess123")
     }
   )
