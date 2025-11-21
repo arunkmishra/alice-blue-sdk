@@ -21,6 +21,9 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: 'sbt'
+
+    - name: Setup sbt
+      uses: sbt/setup-sbt@v1
         
     - name: Check Formatting
       run: sbt scalafmtCheckAll
