@@ -7,7 +7,7 @@ import sttp.client3._
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
 import com.aliceblue.models._
-
+import com.aliceblue.client.AliceBlueApiClient
 import sttp.client3.httpclient.zio.HttpClientZioBackend
 
 object AuthSpec extends ZIOSpecDefault:
@@ -17,7 +17,9 @@ object AuthSpec extends ZIOSpecDefault:
         .whenRequestMatches(_.uri.path.endsWith(List("customer", "getAPIEncpkey")))
         .thenRespond("""{"encKey": "testKey"}""")
 
-      for key <- Auth.getEncryptionKey("USER1", backend)
+      val apiClient = AliceBlueApiClient("http://test", "USER1", None, backend)
+
+      for key <- Auth.getEncryptionKey("USER1", apiClient)
       yield assertTrue(key == "testKey")
     },
     test("getSessionId returns session ID on success") {
@@ -25,7 +27,9 @@ object AuthSpec extends ZIOSpecDefault:
         .whenRequestMatches(_.uri.path.endsWith(List("customer", "getUserSID")))
         .thenRespond("""{"sessionID": "sess123"}""")
 
-      for sess <- Auth.getSessionId("USER1", "APIKEY", "ENCKEY", backend)
+      val apiClient = AliceBlueApiClient("http://test", "USER1", None, backend)
+
+      for sess <- Auth.getSessionId("USER1", "APIKEY", "ENCKEY", apiClient)
       yield assertTrue(sess == "sess123")
     }
   )

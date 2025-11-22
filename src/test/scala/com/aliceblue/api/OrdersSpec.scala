@@ -6,7 +6,7 @@ import zio.test.Assertion._
 import sttp.client3._
 import sttp.client3.testing.SttpBackendStub
 import com.aliceblue.models._
-
+import com.aliceblue.client.AliceBlueApiClient
 import sttp.client3.httpclient.zio.HttpClientZioBackend
 
 object OrdersSpec extends ZIOSpecDefault:
@@ -15,6 +15,8 @@ object OrdersSpec extends ZIOSpecDefault:
       val backend = HttpClientZioBackend.stub
         .whenRequestMatches(_.uri.path.endsWith(List("placeOrder", "executePlaceOrder")))
         .thenRespond("""[{"stat": "Ok", "nOrdNo": "12345"}]""")
+
+      val apiClient = AliceBlueApiClient("http://test", "USER1", Some("SESS1"), backend)
 
       val req = PlaceOrderRequest(
         complexty = "regular",
@@ -32,7 +34,7 @@ object OrdersSpec extends ZIOSpecDefault:
         orderTag = "tag"
       )
 
-      for resp <- Orders.placeOrder("USER1", "SESS1", req, backend)
+      for resp <- Orders.placeOrder(req, apiClient)
       yield assertTrue(resp.stat == "Ok") && assertTrue(resp.nOrdNo.contains("12345"))
     },
     test("cancelOrder sends correct request") {
@@ -40,7 +42,9 @@ object OrdersSpec extends ZIOSpecDefault:
         .whenRequestMatches(_.uri.path.endsWith(List("placeOrder", "cancelOrder")))
         .thenRespond("Cancelled")
 
-      for resp <- Orders.cancelOrder("USER1", "SESS1", "12345", backend)
+      val apiClient = AliceBlueApiClient("http://test", "USER1", Some("SESS1"), backend)
+
+      for resp <- Orders.cancelOrder("12345", apiClient)
       yield assertTrue(resp == "Cancelled")
     },
     test("getOrderBook parses response correctly") {
@@ -50,7 +54,9 @@ object OrdersSpec extends ZIOSpecDefault:
           """{"stat": "Ok", "result": [{"nOrdNo": "1", "prc": "100", "qty": "1", "pcode": "MIS", "prctyp": "MKT", "trantype": "BUY", "status": "COMPLETE"}]}"""
         )
 
-      for book <- Orders.getOrderBook("USER1", "SESS1", backend)
+      val apiClient = AliceBlueApiClient("http://test", "USER1", Some("SESS1"), backend)
+
+      for book <- Orders.getOrderBook(apiClient)
       yield assertTrue(book.head.nOrdNo == "1")
     }
   )
