@@ -1,76 +1,58 @@
 package com.aliceblue.api
 
 import zio._
-import zio.json._
-import sttp.client3._
-import sttp.client3.ziojson._
 import com.aliceblue.models._
+import com.aliceblue.client.ApiClient
 
 object Orders:
-  private val BaseUrl = "https://ant.aliceblueonline.com/rest/AliceBlueAPIService/api"
 
+  /** Places an order.
+    *
+    * @param request
+    *   The order placement request details.
+    * @param apiClient
+    *   The API client to use.
+    * @return
+    *   The response containing the order status and order number.
+    */
   def placeOrder(
-      userId: String,
-      sessionId: String,
       request: PlaceOrderRequest,
-      backend: SttpBackend[Task, Any]
+      apiClient: ApiClient
   ): Task[PlaceOrderResponse] =
-    val authenticatedRequest = basicRequest
-      .post(uri"$BaseUrl/placeOrder/executePlaceOrder")
-      .header("Authorization", s"Bearer $userId $sessionId")
-      .header("Content-Type", "application/json")
-      .body(List(request).toJson) // API expects a list
-      .response(asJson[List[PlaceOrderResponse]])
+    // API expects a list for placeOrder
+    apiClient
+      .post[List[PlaceOrderResponse], List[PlaceOrderRequest]]("placeOrder/executePlaceOrder", List(request))
+      .flatMap {
+        case success :: _ => ZIO.succeed(success)
+        case Nil          => ZIO.fail(new Exception("Empty response from placeOrder"))
+      }
 
-    backend.send(authenticatedRequest).flatMap { response =>
-      response.body match
-        case Right(List(success: PlaceOrderResponse))               => ZIO.succeed(success)
-        case Right(list: List[PlaceOrderResponse]) if list.nonEmpty => ZIO.succeed(list.head) // Handle multiple?
-        case Right(Nil)  => ZIO.fail(new Exception("Empty response from placeOrder"))
-        case Left(error) => ZIO.fail(new Exception(s"Failed to place order: $error"))
-    }
-
+  /** Cancels an order.
+    *
+    * @param nestOrderNumber
+    *   The order number to cancel.
+    * @param apiClient
+    *   The API client to use.
+    * @return
+    *   A string indicating the cancellation status.
+    */
   def cancelOrder(
-      userId: String,
-      sessionId: String,
       nestOrderNumber: String,
-      backend: SttpBackend[Task, Any]
+      apiClient: ApiClient
   ): Task[String] =
-    // pya3: data = {'nestOrderNumber': nestordernmbr}
-    // cancelresp = self._post("cancelorder", data)
-    // "cancelorder": "placeOrder/cancelOrder"
+    apiClient.postString[CancelRequest]("placeOrder/cancelOrder", CancelRequest(nestOrderNumber))
 
-    case class CancelRequest(nestOrderNumber: String)
-    given JsonEncoder[CancelRequest] = DeriveJsonEncoder.gen
-
-    // Response is likely a generic status response, need to check model.
-    // For now returning raw string or we can define a generic response.
-
-    val request = basicRequest
-      .post(uri"$BaseUrl/placeOrder/cancelOrder")
-      .header("Authorization", s"Bearer $userId $sessionId")
-      .body(CancelRequest(nestOrderNumber))
-      .response(asString)
-
-    backend.send(request).flatMap { response =>
-      response.body match
-        case Right(success) => ZIO.succeed(success)
-        case Left(error)    => ZIO.fail(new Exception(s"Failed to cancel order: $error"))
-    }
-
+  /** Retrieves the order book.
+    *
+    * @param apiClient
+    *   The API client to use.
+    * @return
+    *   A list of orders in the order book.
+    */
   def getOrderBook(
-      userId: String,
-      sessionId: String,
-      backend: SttpBackend[Task, Any]
+      apiClient: ApiClient
   ): Task[List[OrderBookItem]] =
-    val request = basicRequest
-      .get(uri"$BaseUrl/placeOrder/fetchOrderBook")
-      .header("Authorization", s"Bearer $userId $sessionId")
-      .response(asJson[OrderBookResponse])
-
-    backend.send(request).flatMap { response =>
-      response.body match
-        case Right(success) if success.stat == "Ok" => ZIO.succeed(success.result.getOrElse(Nil))
-        case Right(failure)                         => ZIO.fail(new Exception(s"Order book failed: ${failure.emsg}"))
-        case Left(error)                            => ZIO.fail(new Exception(s"Failed to get order book: $error"))
+    apiClient.get[OrderBookResponse]("placeOrder/fetchOrderBook").flatMap { response =>
+      if (response.stat == "Ok") ZIO.succeed(response.result.getOrElse(Nil))
+      else ZIO.fail(new Exception(s"Order book failed: ${response.emsg}"))
     }

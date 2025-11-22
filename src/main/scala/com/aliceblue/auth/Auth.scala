@@ -1,39 +1,50 @@
 package com.aliceblue.auth
 
 import zio._
-import sttp.client3._
-import sttp.client3.ziojson._
 import com.aliceblue.models._
+import com.aliceblue.client.ApiClient
 import java.security.MessageDigest
 import java.nio.charset.StandardCharsets
 
 object Auth:
-  private val BaseUrl = "https://ant.aliceblueonline.com/rest/AliceBlueAPIService/api"
 
-  def getEncryptionKey(userId: String, backend: SttpBackend[Task, Any]): Task[String] =
-    val request = basicRequest
-      .post(uri"$BaseUrl/customer/getAPIEncpkey")
-      .body(EncryptionKeyRequest(userId))
-      .response(asJson[EncryptionKeyResponse])
+  /** Retrieves the encryption key for a user.
+    *
+    * @param userId
+    *   The user ID.
+    * @param apiClient
+    *   The API client to use.
+    * @return
+    *   The encryption key.
+    */
+  def getEncryptionKey(userId: String, apiClient: ApiClient): Task[String] =
+    apiClient
+      .post[EncryptionKeyResponse, EncryptionKeyRequest]("customer/getAPIEncpkey", EncryptionKeyRequest(userId))
+      .map(_.encKey)
 
-    backend.send(request).flatMap { response =>
-      response.body match
-        case Right(success) => ZIO.succeed(success.encKey)
-        case Left(error)    => ZIO.fail(new Exception(s"Failed to get encryption key: $error"))
-    }
-
-  def getSessionId(userId: String, apiKey: String, encKey: String, backend: SttpBackend[Task, Any]): Task[String] =
+  /** Retrieves the session ID.
+    *
+    * @param userId
+    *   The user ID.
+    * @param apiKey
+    *   The API key.
+    * @param encKey
+    *   The encryption key.
+    * @param apiClient
+    *   The API client to use.
+    * @return
+    *   The session ID.
+    */
+  def getSessionId(
+      userId: String,
+      apiKey: String,
+      encKey: String,
+      apiClient: ApiClient
+  ): Task[String] =
     val checksum = sha256(userId + apiKey + encKey)
-    val request = basicRequest
-      .post(uri"$BaseUrl/customer/getUserSID")
-      .body(SessionIdRequest(userId, checksum))
-      .response(asJson[SessionIdResponse])
-
-    backend.send(request).flatMap { response =>
-      response.body match
-        case Right(success) => ZIO.succeed(success.sessionID)
-        case Left(error)    => ZIO.fail(new Exception(s"Failed to get session ID: $error"))
-    }
+    apiClient
+      .post[SessionIdResponse, SessionIdRequest]("customer/getUserSID", SessionIdRequest(userId, checksum))
+      .map(_.sessionID)
 
   private def sha256(input: String): String =
     val digest  = MessageDigest.getInstance("SHA-256")
